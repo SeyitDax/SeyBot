@@ -1,0 +1,13 @@
+# Ignore Visual Studio build files
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Ignore environment files
+.env
+
+# Ignore dependency files
+node_modules/
+packages/
