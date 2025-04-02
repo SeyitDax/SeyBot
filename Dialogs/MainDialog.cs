@@ -1,26 +1,23 @@
-using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
-using System.Threading;
+using System;
 using System.Threading.Tasks;
+using System.Threading;
 
 public class MainDialog : ComponentDialog
 {
-    public MainDialog() 
-        : base(nameof(MainDialog))
+    public MainDialog(GreetingDialog greetingDialog) : base(nameof(MainDialog))
     {
-        // Add dialogs to the MainDialog
-        AddDialog(new GreetingDialog());
+        AddDialog(greetingDialog);
         AddDialog(new WaterfallDialog(nameof(WaterfallDialog), new WaterfallStep[]
         {
-            StartGreetingDialogStepAsync
+            BeginGreetingDialogStepAsync
         }));
 
         InitialDialogId = nameof(WaterfallDialog);
     }
 
-    private async Task<DialogTurnResult> StartGreetingDialogStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+    private async Task<DialogTurnResult> BeginGreetingDialogStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
-        // Begin GreetingDialog
-        return await stepContext.BeginDialogAsync(nameof(GreetingDialog), null, cancellationToken); 
+        return await stepContext.BeginDialogAsync(nameof(GreetingDialog), null, cancellationToken);
     }
 }
