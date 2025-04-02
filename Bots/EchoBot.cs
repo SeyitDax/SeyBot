@@ -14,15 +14,16 @@ namespace SeyBot.Bots
     {
         private readonly ConversationState _conversationState;
         private readonly DialogSet _dialogs;
-        public EchoBot(ConversationState conversationState)
+        private readonly Dialog _mainDialog;
+
+        public EchoBot(ConversationState conversationState, MainDialog mainDialog)
         {
             _conversationState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
+            _mainDialog = mainDialog ?? throw new ArgumentNullException(nameof(mainDialog));
 
             var dialogState = conversationState.CreateProperty<DialogState>("DialogState");
             _dialogs = new DialogSet(dialogState);
-
-            // Add MainDialog to the dialog set
-            _dialogs.Add(new MainDialog());
+            _dialogs.Add(_mainDialog);
         }
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {

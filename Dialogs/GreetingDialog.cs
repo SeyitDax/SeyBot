@@ -1,5 +1,6 @@
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Schema;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -8,12 +9,17 @@ using System.Threading.Tasks;
 
 public class GreetingDialog : ComponentDialog
 {
-    public GreetingDialog() : base(nameof(GreetingDialog))
+    private readonly CLUHelper _cluHelper;
+
+    public GreetingDialog(CLUHelper cluHelper) : base(nameof(GreetingDialog))
     {
+        _cluHelper = cluHelper ?? throw new ArgumentNullException(nameof(cluHelper));
+
         // Define the steps of the waterfallDialog
         var waterfallSteps = new WaterfallStep[]
         {
             AskNameStepAsync, //Each Step
+            ValidateNameStepAsync,
             DisplayGreetingStepAsync,
             FollowUpStepAsync // New step added
         };
@@ -29,69 +35,50 @@ public class GreetingDialog : ComponentDialog
     {
         // Prompt the user for their name.
         return await stepContext.PromptAsync(nameof(TextPrompt),
-            new PromptOptions { Prompt = MessageFactory.Text("What is your name?") },
+            new PromptOptions { Prompt = MessageFactory.Text("Would you be kind enough to let me know your name?") },
             cancellationToken);
     }
+    private async Task<DialogTurnResult> ValidateNameStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+    {
+        var userInput = (string)stepContext.Result;
+        var userDetails = await _cluHelper.ExtractUserDetailsAsync(userInput);
 
+        userDetails.TryGetValue("PersonName", out string name);
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            // If the name is invalid, ask again
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text("I didn't quite catch that. Plase enter your real name."), cancellationToken);
+            return await stepContext.ReplaceDialogAsync(nameof(WaterfallDialog), null, cancellationToken);
+        }
+
+        // Store the cleaned name
+        stepContext.Values["UserName"] = name;
+        return await stepContext.NextAsync(name, cancellationToken);
+    }
     private async Task<DialogTurnResult> DisplayGreetingStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
-        // Retrieve the user's name from the previous step.
-        var userInput = (string)stepContext.Result;
-        var name = ExtractName(userInput);
-
-        // Store the cleaned name in dialog state
-        stepContext.Values["userName"] = name;
-
-        // Respond with a greeting message.
-        await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hello, {name} nice to meet you."), cancellationToken);
-
-        // Move to the next step (Follow-up question)
+        var name = (string)stepContext.Values["UserName"];
+        await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hello, {name}! Pleased to meet you."), cancellationToken);
         return await stepContext.NextAsync(null, cancellationToken);
     }
-
     private async Task<DialogTurnResult> FollowUpStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
-        // Ask the user how the bot can assist
-        return await stepContext.PromptAsync(nameof(TextPrompt),
-            new PromptOptions { Prompt = MessageFactory.Text("How can I assist you today?")},
-            cancellationToken);
-    }
-
-    private string ExtractName(string input)
-    {
-        // Define common patterns used to introduce a name
-        string[] patterns =
+        var heroCard = new HeroCard
         {
-            @"\bmy name is\b",
-            @"bit'?s\b",
-            @"\bi am\b",
-            @"\bthis is\b",
-            @"\bcall me\b"
+            Text = "How can I assist you today?",
+            Buttons = new List<CardAction>
+        {
+            new CardAction(ActionTypes.ImBack, "Check Orders", value: "orders"),
+            new CardAction(ActionTypes.ImBack, "Get Support", value: "support"),
+            new CardAction(ActionTypes.ImBack, "Chat", value: "chat")
+        }
         };
 
-        // Convert input to lowercase for case-insensitive matching
-        string cleanedInput = input.ToLower();
+        var message = MessageFactory.Attachment(heroCard.ToAttachment());
 
-        // Remove unwanted phrases
-        foreach (var pattern in patterns)
-        {
-            cleanedInput = Regex.Replace(cleanedInput, pattern, "", RegexOptions.IgnoreCase).Trim();
-        }
+        await stepContext.Context.SendActivityAsync(message, cancellationToken);
 
-        // Capitalize each word in the extracted name
-        return CapitalizeWords(cleanedInput);
-    }
-
-    private string CapitalizeWords(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return "bro"; // Default fallback if extraction fails
-
-        string[] words = input.Split(' ');
-        for (int i = 0; i < words.Length; i++)
-        {
-            words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1);
-        }
-        return string.Join(" ", words);
+        return await stepContext.NextAsync(null, cancellationToken);
     }
 }
