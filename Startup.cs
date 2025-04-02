@@ -29,6 +29,10 @@ namespace SeyBot
                 options.SerializerSettings.MaxDepth = HttpHelper.BotMessageSerializerSettings.MaxDepth;
             });
 
+            services.AddSingleton<CLUHelper>();
+            services.AddSingleton<GreetingDialog>();
+            services.AddSingleton<MainDialog>();
+
             // Create the Bot Framework Authentication to be used with the Bot Adapter.
             services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
 
