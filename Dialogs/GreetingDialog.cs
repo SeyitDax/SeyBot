@@ -21,7 +21,8 @@ public class GreetingDialog : ComponentDialog
             AskNameStepAsync, //Each Step
             ValidateNameStepAsync,
             DisplayGreetingStepAsync,
-            FollowUpStepAsync // New step added
+            FollowUpStepAsync, // New step added
+            HandleFollowUpResponseStepAsync
         };
 
         // Add dialogs to the dialog set.
@@ -44,12 +45,36 @@ public class GreetingDialog : ComponentDialog
         var userDetails = await _cluHelper.ExtractUserDetailsAsync(userInput);
 
         userDetails.TryGetValue("PersonName", out string name);
+        userDetails.TryGetValue("Intent", out string intent);
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            // If the name is invalid, ask again
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("I didn't quite catch that. Plase enter your real name."), cancellationToken);
-            return await stepContext.ReplaceDialogAsync(nameof(WaterfallDialog), null, cancellationToken);
+            if(intent == "CheckOrders")
+            {
+                await stepContext.Context.SendActivityAsync(
+                    MessageFactory.Text("Of course! But first, may I have your name?"),
+                    cancellationToken
+                    );
+                return await stepContext.ReplaceDialogAsync(nameof(GreetingDialog), null, cancellationToken);
+            }
+            else if (intent == "Rejection")
+            {
+                name = "friend";
+                await stepContext.Context.SendActivityAsync(
+                    MessageFactory.Text("Alright friend"), cancellationToken
+                    );
+                stepContext.Values["UserName"] = name;
+                return await stepContext.BeginDialogAsync("FollowUpStepAsync", cancellationToken);
+            }
+            else
+            {
+                // Default name prompt
+                await stepContext.Context.SendActivityAsync(
+                        MessageFactory.Text("Sorry, I didn't get your name. Would you like to skip?"),
+                        cancellationToken
+                        );
+                return await stepContext.ReplaceDialogAsync(nameof(GreetingDialog), null, cancellationToken);
+            }
         }
 
         // Store the cleaned name
@@ -76,9 +101,31 @@ public class GreetingDialog : ComponentDialog
         };
 
         var message = MessageFactory.Attachment(heroCard.ToAttachment());
-
         await stepContext.Context.SendActivityAsync(message, cancellationToken);
 
-        return await stepContext.NextAsync(null, cancellationToken);
+        return Dialog.EndOfTurn;
+    }
+    private async Task<DialogTurnResult> HandleFollowUpResponseStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+    {
+
+        var userResponse = stepContext.Context.Activity.Text?.ToLower();
+
+        if (userResponse.Contains("orders"))
+        {
+            await stepContext.Context.SendActivityAsync("Sure! Please enter your order number.", cancellationToken: cancellationToken);
+        }
+        else if (userResponse.Contains("support"))
+        {
+            await stepContext.Context.SendActivityAsync("Okay, I'm here to help! What issue are you facing?", cancellationToken: cancellationToken);
+        }
+        else if (userResponse.Contains("chat"))
+        {
+            await stepContext.Context.SendActivityAsync("Sure, let's chat! How's your day going?", cancellationToken: cancellationToken);
+        }
+        else
+        {
+            await stepContext.Context.SendActivityAsync("I'm not sure what you meant. Can you choose an option?", cancellationToken: cancellationToken);
+        }
+        return await stepContext.EndDialogAsync(null, cancellationToken);
     }
 }
