@@ -64,6 +64,10 @@ public class CLUHelper
         if (response.IsSuccessStatusCode)
         {
             var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
+
+            var topIntent = jsonResponse?.result?.prediction?.topIntent;
+            userDetails["Intent"] = topIntent;
+
             var entities = jsonResponse?.result?.prediction?.entities;
 
             foreach (var entity in entities)
