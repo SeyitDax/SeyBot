@@ -16,23 +16,16 @@ public class NameCaptureDialog : ComponentDialog
     {
         _cluHelper = cLUHelper;
 
-<<<<<<< HEAD
         AddDialog(new WaterfallDialog(nameof(WaterfallDialog), new WaterfallStep[]
         {
             AskNameStepAsync,
             ValidateNameStepAsync
         }));
-=======
-        AddDialog(new WaterfallDialog(nameof(WaterfallDialog)), new WaterfallStep[]
-        {
-
-        });
->>>>>>> a62e528af7bb75b41d25e14e132fc7ab9f4314f2
 
         AddDialog(new TextPrompt(nameof(TextPrompt)));
         InitialDialogId = (nameof(WaterfallDialog));
     }
-<<<<<<< HEAD
+
     
 
     private async Task<DialogTurnResult> AskNameStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -59,6 +52,4 @@ public class NameCaptureDialog : ComponentDialog
         stepContext.Values["UserName"] = name;
         return await stepContext.EndDialogAsync(name, cancellationToken);
     }
-=======
->>>>>>> a62e528af7bb75b41d25e14e132fc7ab9f4314f2
 }
