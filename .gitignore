@@ -11,3 +11,6 @@ obj/
 # Ignore dependency files
 node_modules/
 packages/
+
+#other
+appsettings.json
