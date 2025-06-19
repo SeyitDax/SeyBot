@@ -66,19 +66,24 @@ public class CLUHelper
             var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
 
             var topIntent = jsonResponse?.result?.prediction?.topIntent;
-            userDetails["Intent"] = topIntent;
+            userDetails["intent"] = topIntent;
 
             var entities = jsonResponse?.result?.prediction?.entities;
 
             foreach (var entity in entities)
             {
-                string category = entity.category;
-                string value = entity.text;
+                string category = (string)entity.category;
+                string value = (string)entity.text;
+
+                // Normalize category casing (CLU sometimes returns lowercase or PascalCase)
+                category = category.ToLowerInvariant();
 
                 if (!userDetails.ContainsKey(category))
                 {
                     userDetails[category] = value;
                 }
+
+                // If nested resolutions exist (e.g., for datetime), handle them here later.
             }
         }
 

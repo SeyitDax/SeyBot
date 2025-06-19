@@ -17,7 +17,8 @@ public class GreetingDialog : ComponentDialog
         // Define the steps of the waterfallDialog
         var waterfallSteps = new WaterfallStep[]
         {
-            DisplayGreetingStepAsync,
+            BeginNameCaptureStepAsync,
+            GreetUserStepAsync,
             FollowUpStepAsync, // New step added
             HandleFollowUpResponseStepAsync
         };
@@ -26,13 +27,31 @@ public class GreetingDialog : ComponentDialog
         AddDialog(new WaterfallDialog(nameof(WaterfallDialog), waterfallSteps));
         AddDialog(new TextPrompt(nameof(TextPrompt)));
 
+        // Registering the NameCaptureDialog so BeginDialogAsync can find it
+        AddDialog(new NameCaptureDialog(_cluHelper));
+        AddDialog(new OrderDialog(_cluHelper));
+        AddDialog(new SupportDialog(_cluHelper));
+        AddDialog(new ChatDialog(_cluHelper));
+
         // Set the initial dialog to waterfallDialog.
         InitialDialogId = nameof(WaterfallDialog);
     }
-    private async Task<DialogTurnResult> DisplayGreetingStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+
+    private Task<DialogTurnResult> BeginNameCaptureStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
-        var name = await stepContext.BeginDialogAsync(nameof(NameCaptureDialog), null, cancellationToken);
-        await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hello, {name}! Pleased to meet you."), cancellationToken);
+        // return the Prompt via your child dialog
+        return stepContext.BeginDialogAsync(nameof(NameCaptureDialog), null, cancellationToken);
+    }
+    private async Task<DialogTurnResult> GreetUserStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+    {
+        // the result of NameCaptureDialog.EndDialogAsync(name) is now in stepContext.Result
+        var name = (string)stepContext.Result;
+
+        await stepContext.Context.SendActivityAsync(
+            MessageFactory.Text($"Hello, {name}! Pleased to meet you."),
+            cancellationToken); 
+
+        // advance to the next step in *this* waterfall
         return await stepContext.NextAsync(null, cancellationToken);
     }
     private async Task<DialogTurnResult> FollowUpStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -57,25 +76,24 @@ public class GreetingDialog : ComponentDialog
     }
     private async Task<DialogTurnResult> HandleFollowUpResponseStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
+        Console.WriteLine("Message is: " + stepContext.Result as string);
+
         var prediction = await _cluHelper.ExtractUserDetailsAsync((stepContext.Result as string)?.ToLower());
-        prediction.TryGetValue("Intent", out string intent);
+        prediction.TryGetValue("intent", out string intent);
+
+        Console.WriteLine("Intent is: " + intent);
 
         switch (intent)
         {
-            case "Order":
-                 await stepContext.Context.SendActivityAsync("Sure! Please enter your order number.");
-                break;
-            case "Support":
-                await stepContext.Context.SendActivityAsync("Okay, I'm here to help! What issue are you facing?");
-                break;
+            case "CheckOrders":
+                 return await stepContext.BeginDialogAsync(nameof(OrderDialog), null, cancellationToken);
+            case "GetSupport":
+                return await stepContext.BeginDialogAsync(nameof(SupportDialog), null, cancellationToken);
             case "Chat":
-                await stepContext.Context.SendActivityAsync("Sure, let's chat! How's your day going?");
-                break;
+                return await stepContext.BeginDialogAsync(nameof(ChatDialog), null, cancellationToken);
             default:
                 await stepContext.Context.SendActivityAsync("I'm not sure what you meant.");
-                break;
+                return await stepContext.EndDialogAsync(intent, cancellationToken);
         }
-
-        return await stepContext.EndDialogAsync(intent, cancellationToken);
     }
 }
