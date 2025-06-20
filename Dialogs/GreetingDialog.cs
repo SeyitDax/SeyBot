@@ -79,7 +79,7 @@ public class GreetingDialog : ComponentDialog
         Console.WriteLine("Message is: " + stepContext.Result as string);
 
         var prediction = await _cluHelper.ExtractUserDetailsAsync((stepContext.Result as string)?.ToLower());
-        prediction.TryGetValue("intent", out string intent);
+        prediction.TryGetValue("Intent", out string intent);
 
         Console.WriteLine("Intent is: " + intent);
 

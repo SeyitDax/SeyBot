@@ -66,7 +66,7 @@ public class CLUHelper
             var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
 
             var topIntent = jsonResponse?.result?.prediction?.topIntent;
-            userDetails["intent"] = topIntent;
+            userDetails["Intent"] = topIntent;
 
             var entities = jsonResponse?.result?.prediction?.entities;
 

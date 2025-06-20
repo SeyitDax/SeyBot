@@ -21,4 +21,9 @@
     </Content>
   </ItemGroup>
 
+
+	<ItemGroup>
+	  <Folder Include="Test\" />
+	</ItemGroup>
+
 </Project>
