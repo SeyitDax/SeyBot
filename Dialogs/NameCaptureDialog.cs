@@ -39,9 +39,11 @@ public class NameCaptureDialog : ComponentDialog
         var input = (string)stepContext.Result;
         var result = await _cluHelper.ExtractUserDetailsAsync(input); 
         result.TryGetValue("personname", out string name);
-        result.TryGetValue("intent", out string intent);
+        result.TryGetValue("Intent", out string intent);
 
-        name ??= (intent == "rejection") ? "friend" : null;
+        Console.WriteLine("Intent is" + intent);
+
+        name ??= (intent == "Rejection") ? "friend" : null;
 
         if(string.IsNullOrEmpty(name))
         {
