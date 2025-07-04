@@ -10,9 +10,12 @@ using System.Threading.Tasks;
 public class GreetingDialog : ComponentDialog
 {
     private readonly CLUHelper _cluHelper;
-    public GreetingDialog(CLUHelper cluHelper) : base(nameof(GreetingDialog))
+    private readonly OpenAIHelper _openAIHelper;
+
+    public GreetingDialog(CLUHelper cluHelper, OpenAIHelper openAIHelper) : base(nameof(GreetingDialog))
     {
         _cluHelper = cluHelper;
+        _openAIHelper = openAIHelper;
 
         // Define the steps of the waterfallDialog
         var waterfallSteps = new WaterfallStep[]
@@ -31,7 +34,7 @@ public class GreetingDialog : ComponentDialog
         AddDialog(new NameCaptureDialog(_cluHelper));
         AddDialog(new OrderDialog(_cluHelper));
         AddDialog(new SupportDialog(_cluHelper));
-        AddDialog(new ChatDialog(_cluHelper));
+        AddDialog(new ChatDialog(_cluHelper, _openAIHelper));
 
         // Set the initial dialog to waterfallDialog.
         InitialDialogId = nameof(WaterfallDialog);
