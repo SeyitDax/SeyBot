@@ -33,6 +33,8 @@ namespace SeyBot
             services.AddSingleton<GreetingDialog>();
             services.AddSingleton<MainDialog>();
             services.AddSingleton<NameCaptureDialog>();
+            services.AddSingleton<OpenAIHelper>();
+            services.AddSingleton<ChatDialog>();
 
             // Create the Bot Framework Authentication to be used with the Bot Adapter.
             services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
