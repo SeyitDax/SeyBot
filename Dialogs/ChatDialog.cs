@@ -40,7 +40,16 @@ public class ChatDialog : ComponentDialog
     private async Task<DialogTurnResult> RespondToMessageAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
         var userMessage = stepContext.Result as string;
-        var aiResponse = await _openAIHelper.GetChatCompletionAsync(userMessage);
+        string aiResponse;
+        try
+        {
+            aiResponse = await _openAIHelper.GetChatCompletionAsync(userMessage);
+        }
+        catch (Exception ex)
+        {
+            // Optionally log ex
+            aiResponse = "Sorry, something went wrong while contacting the AI service.";
+        }
         await stepContext.Context.SendActivityAsync(aiResponse);
         return await stepContext.EndDialogAsync(null, cancellationToken);
     }
